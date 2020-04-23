@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jan Wijffels" />
 
-<meta name="date" content="2020-03-30" />
+<meta name="date" content="2020-04-23" />
 
 <title>Text Alignment</title>
 
@@ -1518,7 +1518,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Text Alignment</h1>
 <h4 class="author">Jan Wijffels</h4>
-<h4 class="date">2020-03-30</h4>
+<h4 class="date">2020-04-23</h4>
 
 </div>
 
@@ -1700,27 +1700,29 @@ overview$b_from</code></pre>
 <pre class="r"><code>x &lt;- smith_waterman(a, b)
 x &lt;- as.data.frame(x)
 str(x)</code></pre>
-<pre><code>&#39;data.frame&#39;:   1 obs. of  18 variables:
- $ a         : chr &quot;Actum den 15e april 1709\nJan Mortier filius Jan oudt 43 jaeren ghebooren van Hontschote bleecker\nop de groote&quot;| __truncated__
- $ b         : chr &quot;Actum den 15e april 1709\nJan Mortier fs Jan oudt 43 jaeren gebooren van Hontscote bleecker\nop de groote St Gi&quot;| __truncated__
- $ sw        : int 2386
- $ similarity: num 0.911
- $ matches   : int 1246
- $ mismatches: int 17
- $ a_n       : int 1315
- $ a_aligned : chr &quot;Actum den 15e april 1709\nJan Mortier filius Jan oudt 43 jaeren ghebooren van Hontschote bleecker\nop de groote&quot;| __truncated__
- $ a_gaps    : int 47
- $ a_from    : num 1
- $ a_to      : num 1315
- $ a_fromto  :List of 1
+<pre><code>&#39;data.frame&#39;:   1 obs. of  20 variables:
+ $ a           : chr &quot;Actum den 15e april 1709\nJan Mortier filius Jan oudt 43 jaeren ghebooren van Hontschote bleecker\nop de groote&quot;| __truncated__
+ $ b           : chr &quot;Actum den 15e april 1709\nJan Mortier fs Jan oudt 43 jaeren gebooren van Hontscote bleecker\nop de groote St Gi&quot;| __truncated__
+ $ sw          : int 2386
+ $ similarity  : num 0.911
+ $ matches     : int 1246
+ $ mismatches  : int 17
+ $ a_n         : int 1315
+ $ a_aligned   : chr &quot;Actum den 15e april 1709\nJan Mortier filius Jan oudt 43 jaeren ghebooren van Hontschote bleecker\nop de groote&quot;| __truncated__
+ $ a_similarity: num 0.907
+ $ a_gaps      : int 47
+ $ a_from      : num 1
+ $ a_to        : num 1315
+ $ a_fromto    :List of 1
   ..$ : chr  &quot;A&quot; &quot;c&quot; &quot;t&quot; &quot;u&quot; ...
   ..- attr(*, &quot;class&quot;)= chr &quot;AsIs&quot;
- $ b_n       : int 1310
- $ b_aligned : chr &quot;Actum den 15e april 1709\nJan Mortier f####s Jan oudt 43 jaeren g#ebooren van Hontsc#ote bleecker\nop de groote&quot;| __truncated__
- $ b_gaps    : int 52
- $ b_from    : num 1
- $ b_to      : num 1310
- $ b_fromto  :List of 1
+ $ b_n         : int 1310
+ $ b_aligned   : chr &quot;Actum den 15e april 1709\nJan Mortier f####s Jan oudt 43 jaeren g#ebooren van Hontsc#ote bleecker\nop de groote&quot;| __truncated__
+ $ b_similarity: num 0.911
+ $ b_gaps      : int 52
+ $ b_from      : num 1
+ $ b_to        : num 1310
+ $ b_fromto    :List of 1
   ..$ : chr  &quot;A&quot; &quot;c&quot; &quot;t&quot; &quot;u&quot; ...
   ..- attr(*, &quot;class&quot;)= chr &quot;AsIs&quot;</code></pre>
 </div>
