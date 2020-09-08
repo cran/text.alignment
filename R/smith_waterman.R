@@ -62,11 +62,13 @@ tokenize_spaces_punct <- function(x){
 #' @param collapse separator used to combined characters / words back together in the output. Defaults to '' for type 'characters' and a space for type 'words'
 #' @param edit_mark separator to indicated a gap/mismatch between sequences. Defaults to the hashtag symbol.
 #' @param implementation either 'R' or 'Rcpp' indicating to perform the alignment in Rcpp or with plain R code. Defaults to 'R'.
+#' @param ... extra arguments passed on to \code{tokenizer}
 #' @seealso \url{https://en.wikipedia.org/wiki/Smith-Waterman_algorithm}
 #' @details The code uses similar code as the \code{textreuse::local_align} function and also allows to align character sequences next to aligning word sequences
 #' @return an object of class smith_waterman which is a list with elements
 #' \itemize{
 #'  \item{type: }{The alignment \code{type}}
+#'  \item{edit_mark:}{The \code{edit_mark}}
 #'  \item{sw: }{The Smith-Waterman local alignment score}
 #'  \item{similarity: }{Score between 0 and 1, calculated as the Smith-Waterman local alignment score / (the number of letters/words in the shortest text times the match weight)}
 #'  \item{weights: }{The list of weights provided to the function: match, mismatch and gap}
@@ -129,6 +131,7 @@ tokenize_spaces_punct <- function(x){
 #' x <- smith_waterman("Lange rei", b)
 #' x$b$tokens[x$b$alignment$from:x$b$alignment$to]
 #' as.data.frame(x)
+#' as.data.frame(x, alignment_id = "alignment-ab")
 #' 
 #' x <- lapply(c("Lange rei", "Gistel Hof", NA, "Test"), FUN = function(a){
 #'   x <- smith_waterman(a, b)
@@ -145,7 +148,8 @@ smith_waterman <- function(a, b,
                            tokenizer,
                            collapse,
                            edit_mark = "#", 
-                           implementation = c("R", "Rcpp")) {
+                           implementation = c("R", "Rcpp"), 
+                           ...) {
   rcpp <- match.arg(implementation) == "Rcpp"
   type <- match.arg(type)
   match    <- as.integer(match)
@@ -164,8 +168,8 @@ smith_waterman <- function(a, b,
   stopifnot(is.character(b) && length(b) == 1)
   
   # Tokenise into letters or words
-  original_a <- tokenizer(a)
-  original_b <- tokenizer(b)
+  original_a <- tokenizer(a, ...)
+  original_b <- tokenizer(b, ...)
   
   # Lowercasing to standardise
   if(lower){
@@ -194,6 +198,7 @@ smith_waterman <- function(a, b,
   
   if(row_i == 1 || col_i == 1){
     alignment <- list(type = type, 
+                      edit_mark = edit_mark,
                       weights = list(match = match, mismatch = mismatch, gap = gap),
                       sw = 0,
                       similarity = 0,
@@ -249,6 +254,7 @@ smith_waterman <- function(a, b,
   similarity <- alignment_score / (min(length(standardised_a), length(standardised_b)) * match)
   # Construct the output structure
   alignment <- list(type = type, 
+                    edit_mark = edit_mark,
                     weights = list(match = match, mismatch = mismatch, gap = gap),
                     sw = alignment_score,
                     similarity = similarity,
@@ -276,6 +282,79 @@ smith_waterman <- function(a, b,
                                               to = path$b$to)))
   class(alignment) <- c("smith_waterman")
   alignment
+}
+
+if(!exists("startsWith", envir = baseenv())){
+  ## Function only from R version 3.3.0
+  startsWith <- function(x, prefix){
+    prefix <- paste("^", prefix, sep = "")
+    grepl(pattern = prefix, x = x)
+  }
+}
+
+#' @title Extract misaligned elements 
+#' @description Extract misaligned elements from the Smith-Waterman alignment, namely
+#' \itemize{
+#' \item{before_alignment: }{Sections in a or b which were occurring before the alignment}
+#' \item{wrong_alignment: }{Sections in a or b which were mismatched in the alignment}
+#' \item{after_alignment: }{Sections in a or b which were occurring after the alignment}
+#' }
+#' @param x an object of class \code{smith_waterman} as returned by \code{\link{smith_waterman}}
+#' @param type either 'a' or 'b' indicating to return elements misaligned from \code{a} or from \code{b}
+#' @export
+#' @return a list of character vectors of misaligned elements
+#' \itemize{
+#' \item{before_alignment: }{Sections in a or b which were occurring before the alignment}
+#' \item{wrong_alignment: }{Sections in a or b which were mismatched in the alignment}
+#' \item{after_alignment: }{Sections in a or b which were occurring after the alignment}
+#' \item{combined: }{The combination of \code{before_alignment}, \code{wrong_alignment} and \code{after_alignment}}
+#' \item{partial: }{Logical, where TRUE indicates that there is at least a partial alignment and FALSE indicating no alignment between \code{a} and \code{b} was done (alignment score of 0)}
+#' }
+#' @examples
+#' sw <- smith_waterman("ab test xy", "cd tesst ab", type = "characters")
+#' sw
+#' misses <- smith_waterman_misaligned(sw, type = "a")
+#' str(misses)
+#' misses <- smith_waterman_misaligned(sw, type = "b")
+#' str(misses)
+#' 
+#' a <- system.file(package = "text.alignment", "extdata", "example1.txt")
+#' a <- readLines(a)
+#' a <- paste(a, collapse = "\n")
+#' b <- system.file(package = "text.alignment", "extdata", "example2.txt")
+#' b <- readLines(b)
+#' b <- paste(b, collapse = "\n")
+#' sw <- smith_waterman(a, b, type = "characters")
+#' smith_waterman_misaligned(sw, type = "a")
+#' smith_waterman_misaligned(sw, type = "b")
+smith_waterman_misaligned <- function(x, type = c("a", "b")){
+  type <- match.arg(type)
+  if(length(x$edit_mark) == 0){
+    edit_mark <- "#"
+  }else{
+    edit_mark <- x$edit_mark
+  }
+  part <- x[[type]]
+  part_rest <- x[[setdiff(c("a", "b"), type)]]
+  from <- part$alignment$from
+  to <- part$alignment$to
+  if(part$similarity == 0){
+    return(list(before_alignment = character(), wrong_alignment = character(), after_alignment = character(), combined = part$tokens, partial = FALSE))
+  }
+  if(from > 1){
+    front <- part$tokens[1:(from-1)]
+  }else{
+    front <- character()
+  }
+  if(to < part$n){
+    back <- part$tokens[(to+1):part$n]
+  }else{
+    back <- character()
+  }
+  middle <- startsWith(part$alignment$tokens, prefix = edit_mark) | startsWith(part_rest$alignment$tokens, prefix = edit_mark)
+  middle <- part$alignment$tokens[middle]
+  middle <- middle[!startsWith(middle, prefix = edit_mark)]
+  list(before_alignment = front, wrong_alignment = middle, after_alignment = back, combined = c(front, middle, back), partial = TRUE)
 }
 
 mark_chars <- function (word, char, edit) {
@@ -391,7 +470,7 @@ print.smith_waterman <- function(x, ...){
 
 
 #' @export
-as.data.frame.smith_waterman <- function(x, ...){
+as.data.frame.smith_waterman <- function(x, ..., alignment_id = NULL){
   if(x$a$alignment$n > 0){
     a_aligned <- x$a$alignment$text
     a_from <- x$a$alignment$from
@@ -414,25 +493,56 @@ as.data.frame.smith_waterman <- function(x, ...){
     b_to <- NA_integer_
     b_fromto <- NA
   }
-  data.frame(a = x$a$text, b = x$b$text, 
-             sw = x$sw, 
-             similarity = x$similarity,
-             matches = x$matches,
-             mismatches = x$mismatches,
-             a_n = x$a$n,
-             a_aligned = a_aligned, 
-             a_similarity = x$a$similarity,
-             a_gaps = x$a$alignment$gaps,
-             a_from = a_from,
-             a_to = a_to,
-             a_fromto = I(a_fromto),
-             b_n = x$b$n,
-             b_aligned = b_aligned, 
-             b_similarity = x$b$similarity,
-             b_gaps = x$b$alignment$gaps,
-             b_from = b_from,
-             b_to = b_to, 
-             b_fromto = I(b_fromto), stringsAsFactors = FALSE)
+  if(is.null(alignment_id)){
+    x <- data.frame(#alignment_id = alignment_id, 
+                    a = x$a$text, b = x$b$text, 
+                    sw = x$sw, 
+                    similarity = x$similarity,
+                    matches = x$matches,
+                    mismatches = x$mismatches,
+                    a_n = x$a$n,
+                    a_aligned = a_aligned, 
+                    a_similarity = x$a$similarity,
+                    a_gaps = x$a$alignment$gaps,
+                    a_from = a_from,
+                    a_to = a_to,
+                    a_fromto = I(a_fromto),
+                    a_misaligned = I(list(smith_waterman_misaligned(x, type = "a"))),
+                    b_n = x$b$n,
+                    b_aligned = b_aligned, 
+                    b_similarity = x$b$similarity,
+                    b_gaps = x$b$alignment$gaps,
+                    b_from = b_from,
+                    b_to = b_to, 
+                    b_fromto = I(b_fromto), 
+                    b_misaligned = I(list(smith_waterman_misaligned(x, type = "b"))),
+                    stringsAsFactors = FALSE)
+  }else{
+    x <- data.frame(alignment_id = alignment_id, 
+                    a = x$a$text, b = x$b$text, 
+                    sw = x$sw, 
+                    similarity = x$similarity,
+                    matches = x$matches,
+                    mismatches = x$mismatches,
+                    a_n = x$a$n,
+                    a_aligned = a_aligned, 
+                    a_similarity = x$a$similarity,
+                    a_gaps = x$a$alignment$gaps,
+                    a_from = a_from,
+                    a_to = a_to,
+                    a_fromto = I(a_fromto),
+                    a_misaligned = I(list(smith_waterman_misaligned(x, type = "a"))),
+                    b_n = x$b$n,
+                    b_aligned = b_aligned, 
+                    b_similarity = x$b$similarity,
+                    b_gaps = x$b$alignment$gaps,
+                    b_from = b_from,
+                    b_to = b_to, 
+                    b_fromto = I(b_fromto), 
+                    b_misaligned = I(list(smith_waterman_misaligned(x, type = "b"))),
+                    stringsAsFactors = FALSE)
+  }
+  x
 }
 
 

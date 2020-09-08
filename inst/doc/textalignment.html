@@ -11,7 +11,7 @@
 
 <meta name="author" content="Jan Wijffels" />
 
-<meta name="date" content="2020-04-23" />
+<meta name="date" content="2020-09-08" />
 
 <title>Text Alignment</title>
 
@@ -1518,7 +1518,7 @@ div.tocify {
 
 <h1 class="title toc-ignore">Text Alignment</h1>
 <h4 class="author">Jan Wijffels</h4>
-<h4 class="date">2020-04-23</h4>
+<h4 class="date">2020-09-08</h4>
 
 </div>
 
@@ -1698,9 +1698,10 @@ overview$b_from</code></pre>
 <div id="get-alignment-overview-as-a-data.frame" class="section level3">
 <h3>Get alignment overview as a data.frame</h3>
 <pre class="r"><code>x &lt;- smith_waterman(a, b)
-x &lt;- as.data.frame(x)
+x &lt;- as.data.frame(x, alignment_id = &quot;matching-a-to-b&quot;)
 str(x)</code></pre>
-<pre><code>&#39;data.frame&#39;:   1 obs. of  20 variables:
+<pre><code>&#39;data.frame&#39;:   1 obs. of  23 variables:
+ $ alignment_id: chr &quot;matching-a-to-b&quot;
  $ a           : chr &quot;Actum den 15e april 1709\nJan Mortier filius Jan oudt 43 jaeren ghebooren van Hontschote bleecker\nop de groote&quot;| __truncated__
  $ b           : chr &quot;Actum den 15e april 1709\nJan Mortier fs Jan oudt 43 jaeren gebooren van Hontscote bleecker\nop de groote St Gi&quot;| __truncated__
  $ sw          : int 2386
@@ -1716,6 +1717,14 @@ str(x)</code></pre>
  $ a_fromto    :List of 1
   ..$ : chr  &quot;A&quot; &quot;c&quot; &quot;t&quot; &quot;u&quot; ...
   ..- attr(*, &quot;class&quot;)= chr &quot;AsIs&quot;
+ $ a_misaligned:List of 1
+  ..$ :List of 5
+  .. ..$ before_alignment: chr 
+  .. ..$ wrong_alignment : chr  &quot;i&quot; &quot;l&quot; &quot;i&quot; &quot;u&quot; ...
+  .. ..$ after_alignment : chr 
+  .. ..$ combined        : chr  &quot;i&quot; &quot;l&quot; &quot;i&quot; &quot;u&quot; ...
+  .. ..$ partial         : logi TRUE
+  ..- attr(*, &quot;class&quot;)= chr &quot;AsIs&quot;
  $ b_n         : int 1310
  $ b_aligned   : chr &quot;Actum den 15e april 1709\nJan Mortier f####s Jan oudt 43 jaeren g#ebooren van Hontsc#ote bleecker\nop de groote&quot;| __truncated__
  $ b_similarity: num 0.911
@@ -1724,6 +1733,14 @@ str(x)</code></pre>
  $ b_to        : num 1310
  $ b_fromto    :List of 1
   ..$ : chr  &quot;A&quot; &quot;c&quot; &quot;t&quot; &quot;u&quot; ...
+  ..- attr(*, &quot;class&quot;)= chr &quot;AsIs&quot;
+ $ b_misaligned:List of 1
+  ..$ :List of 5
+  .. ..$ before_alignment: chr 
+  .. ..$ wrong_alignment : chr  &quot;g&quot; &quot;o&quot; &quot;r&quot; &quot;l&quot; ...
+  .. ..$ after_alignment : chr 
+  .. ..$ combined        : chr  &quot;g&quot; &quot;o&quot; &quot;r&quot; &quot;l&quot; ...
+  .. ..$ partial         : logi TRUE
   ..- attr(*, &quot;class&quot;)= chr &quot;AsIs&quot;</code></pre>
 </div>
 </div>
@@ -1778,7 +1795,7 @@ $(document).ready(function ()  {
       theme: "bootstrap3",
       context: '.toc-content',
       hashGenerator: function (text) {
-        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_').toLowerCase();
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
       },
       ignoreSelector: ".toc-ignore",
       scrollTo: 0

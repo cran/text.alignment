@@ -36,6 +36,6 @@ substr(overview$b, overview$b_from, overview$b_to)
 
 ## -----------------------------------------------------------------------------
 x <- smith_waterman(a, b)
-x <- as.data.frame(x)
+x <- as.data.frame(x, alignment_id = "matching-a-to-b")
 str(x)
 
